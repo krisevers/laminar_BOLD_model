@@ -12,7 +12,8 @@ from LBR import *
 #==========================================================================
 # Specify neuronal and NVC model:
 #--------------------------------------------------------------------------
-A = np.load('DMF/S.npy', allow_pickle=True)			# Neural activity from dynamic mean field model
+A = np.load('DMF/S.npy', allow_pickle=True)			# Neural activity from dynamic mean field model [POP,T] 
+													# [::2,T]: excitatory [1::2,T]: inhibitory
 P = np.load('DMF/P.npy', allow_pickle=True).item()	# Parameters of neural simulation
 
 T  = P['T']						# Total length of the response (in seconds)
@@ -24,6 +25,9 @@ offset = int(P['offset']/dt)	# Stimulus offset
 P         	= DMF_to_CBF_parameters(P) 	        # Get default parameters (see inside the function)
 neuro, cbf  = DMF_to_CBF_model(A, P) 			# Generate the cerebral blood flow response (CBF)
 
+plt.figure()
+plt.plot(neuro)
+plt.show()
 
 # Specify LBR model:
 #--------------------------------------------------------------------------  

@@ -25,6 +25,9 @@ U['u']       = np.zeros((int(P['T']/P['dt']),K))	# Matrix with input vectors to 
 U['u'][onset:offset,:] = 1             				# Set one during stimulus window
 neuro, cbf  = neuronal_NVC_model(U,P) 				# Generate the neuronal and cerebral blood flow response (CBF)
 
+plt.figure()
+plt.plot(neuro)
+plt.show()
 
 # Specify LBR model:
 #--------------------------------------------------------------------------  
