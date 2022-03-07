@@ -4,26 +4,25 @@ import matplotlib as mpl
 
 import IPython
 
-from neuronal_NVC import *
+from DMF_to_CBF import *
 
 from LBR import *
 
-K = 6 	# number of depths
-
-# Laminar BOLD response to short 2 sec stimulus
+# Laminar BOLD response
 #==========================================================================
 # Specify neuronal and NVC model:
 #--------------------------------------------------------------------------
-P = {}
-U = {}
-P         = neuronal_NVC_parameters(K,P) 			# get default parameters (see inside the function)
-P['T']    = 30                						# Total lenght of the response (in seconds)
-dur       = 2/P['dt']        						# Stimulus duration (in second, e.g. 2 sec) ... dt - refers to integration step
-onset     = int(3/P['dt'])         					# Stimulus onset time (in seconds) 
-offset    = int(onset + dur)     					# Stimulus offset time (in seconds) 
-U['u']       = np.zeros((int(P['T']/P['dt']),K))	# Matrix with input vectors to the neuronal model (one column per depth)
-U['u'][onset:offset,:] = 1             				# Set one during stimulus window
-neuro, cbf  = neuronal_NVC_model(U,P) 				# Generate the neuronal and cerebral blood flow response (CBF)
+A = np.load('S.npy', allow_pickle=True)			# Neural activity from dynamic mean field model
+P = np.load('P.npy', allow_pickle=True).item()	# Parameters of neural simulation
+
+T  = P['T']						# Total length of the response (in seconds)
+dt = P['dt']					# Integration step (in seconds)
+K  = P['K']						# Number of depths
+onset = int(P['onset']/dt)		# Stimulus onset
+offset = int(P['offset']/dt)	# Stimulus offset
+
+P         	= DMF_to_CBF_parameters(P) 	        # Get default parameters (see inside the function)
+neuro, cbf  = DMF_to_CBF_model(A, P) 			# Generate the cerebral blood flow response (CBF)
 
 
 # Specify LBR model:
@@ -40,7 +39,7 @@ LBR, LBRpial, Y = LBR_model(P,cbf);  # Generate the laminar bold response
 
 time_axis = np.arange(0, P['T'], P['dt']) - onset*P['dt']	# time axis in seconds
 
-colors = plt.cm.Spectral(np.linspace(0,1,K))
+colors = plt.cm.Spectral(np.linspace(0,.3,K))
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=colors)
 
 # Display underlying physiological responses
@@ -48,40 +47,40 @@ plt.figure(figsize=(10, 5))
 plt.subplot(2, 3, 1) 
 plt.plot(time_axis,cbf)
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.8, top=1.6)
+#plt.ylim(bottom=0.8, top=1.6)
 plt.xlabel('Time (s)')
 plt.ylabel('Relative CBF in MV (%)')
 plt.subplot(2, 3, 2)
 plt.plot(time_axis,Y['mv'])
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.8, top=1.6)
+#plt.ylim(bottom=0.8, top=1.6)
 plt.xlabel('Time (s)')
 plt.ylabel(r'Relative $CMRO_2$ in MV (%)')
 plt.subplot(2, 3, 3)
 plt.plot(time_axis,Y['vv'])
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.8, top=1.6)
+#plt.ylim(bottom=0.8, top=1.6)
 plt.xlabel('Time (s)')
 plt.ylabel('Relative CBV in MV (%)')
 plt.subplot(2, 3, 4)
 plt.plot(time_axis,Y['qv'])
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.7, top=1.2)
+#plt.ylim(bottom=0.7, top=1.2)
 plt.xlabel('Time (s)')
 plt.ylabel('Relative dHb in MV (%)')
 plt.subplot(2, 3, 5)
 plt.plot(time_axis,Y['vd'])
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.8, top=1.6)
+#plt.ylim(bottom=0.8, top=1.6)
 plt.xlabel('Time (s)')
 plt.ylabel('Relative CBV in AV (%)')
 plt.subplot(2, 3, 6)
 p = plt.plot(time_axis,Y['qd'])
 plt.xlim(left=time_axis[1], right=time_axis[-1])
-plt.ylim(bottom=0.8, top=1.6)
+#plt.ylim(bottom=0.8, top=1.6)
 plt.xlabel('Time (s)')
 plt.ylabel('Relative dHb in AV (%)')
-plt.legend([p[0], p[-1]],['Upper','Lower'])
+plt.legend([p[0], p[1], p[2], p[3]],['L23','L4', 'L5', 'L6'])
 plt.tight_layout(pad=1)
 plt.savefig('svg/physiological_responses.svg')
 
@@ -93,10 +92,12 @@ plt.xlim(left=time_axis[1], right=time_axis[-1])
 plt.ylim(bottom=-1, top=4)                         
 plt.xlabel('Time (s)')
 plt.ylabel('LBR (%)')
-plt.legend([p[0], p[-1]],['Upper','Lower']);
+plt.legend([p[0], p[1], p[2], p[3]],['L23','L4', 'L5', 'L6'])
 
-# calculate time to peak (TTP) and time to undershoot (TTU) with respect to
-# the stimulus onset and offset, respectively
+
+
+#calculate time to peak (TTP) and time to undershoot (TTU) with respect to
+#the stimulus onset and offset, respectively
 TTP   	 = np.zeros(K)
 TTU      = np.zeros(K)
 for i in range(K):

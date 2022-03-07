@@ -396,12 +396,13 @@ def LBR_parameters(K, P):
 
 	P['K']  = K     # Number of depths
 
-	if K<10:
-	    P['dt'] = 0.01  # default integration step
-	elif K<20:
-	    P['dt'] = 0.005 # smaller for higher number of cortical depths
-	else:
-	    P['dt'] = 0.001
+	# if K<10:
+	#     P['dt'] = 0.01  # default integration step
+	# elif K<20:
+	#     P['dt'] = 0.005 # smaller for higher number of cortical depths
+	# else:
+	#     P['dt'] = 0.001
+
 
 	depths = np.linspace(0,100,2*P['K']+1) # Normalized distance to the center of individual depths (in %)
 	P['l']    = depths[1::2]
