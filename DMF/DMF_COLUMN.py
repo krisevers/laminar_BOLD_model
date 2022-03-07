@@ -112,9 +112,9 @@ if __name__=='__main__':
 	I, R, S = DMF(W, Wext, Iext, params=params, stim=stim, t_sim=T, dt=dt)
 
 	# Simulation results
-	np.save('I.npy', I)	# I: Input current
-	np.save('R.npy', R)	# R: Firing rate
-	np.save('S.npy', S)	# S: Synaptic gating
+	np.save('DMF/I.npy', I)	# I: Input current
+	np.save('DMF/R.npy', R)	# R: Firing rate
+	np.save('DMF/S.npy', S)	# S: Synaptic gating
 
 	# Simulation parameters
 	P = {'T': 		T,				# Simulation time (in seconds)
@@ -124,4 +124,4 @@ if __name__=='__main__':
 		 'offset': 	stim['offset'],	# Stimulus offset (in seconds)
 		 'Iext': 	stim['Iext']	# Stimulus amplitude
 		 }	
-	np.save('P.npy', P)
+	np.save('DMF/P.npy', P)

@@ -12,8 +12,8 @@ from LBR import *
 #==========================================================================
 # Specify neuronal and NVC model:
 #--------------------------------------------------------------------------
-A = np.load('S.npy', allow_pickle=True)			# Neural activity from dynamic mean field model
-P = np.load('P.npy', allow_pickle=True).item()	# Parameters of neural simulation
+A = np.load('DMF/S.npy', allow_pickle=True)			# Neural activity from dynamic mean field model
+P = np.load('DMF/P.npy', allow_pickle=True).item()	# Parameters of neural simulation
 
 T  = P['T']						# Total length of the response (in seconds)
 dt = P['dt']					# Integration step (in seconds)
