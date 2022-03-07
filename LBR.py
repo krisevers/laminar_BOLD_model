@@ -1,6 +1,8 @@
 # LBR model
 import numpy as np
 
+import IPython
+
 def LBR_model(P, cbf, *args):
 	'''
 	INPUTS:
@@ -53,7 +55,7 @@ def LBR_model(P, cbf, *args):
 	V0p      = V0t_p                    # CBV0 in pial vein
 
 	# Transit time through venules (or microvasculature in general)
-	if len(P['t0v']) == K:
+	if hasattr(P['t0v'], '__len__'):
 		t0v = P['t0v']
 	else:
 		t0v = np.ones(K)*P['t0v']
@@ -74,11 +76,11 @@ def LBR_model(P, cbf, *args):
 	tt0  = tt0v + tt0d
 
 	# Baseline oxygen extraction fraction
-	if len(P['E0v']) == K:
+	if hasattr(P['E0v'], '__len__'):
 		E0v        = P['E0v']     # depth-specific defined by user
 	else:
 		E0v        = np.ones(K)*P['E0v']
-	if lenn(P['E0d']) == K:
+	if hasattr(P['E0d'], '__len__'):
 		E0d        = P['E0d']      # depth-specific defined by user
 	else:
 		E0d        = np.ones(K)*P['E0d']
@@ -87,36 +89,36 @@ def LBR_model(P, cbf, *args):
 
 	# PARAMETERS DESCRIBING RELATIVE RELATIONSHIPS BETWEEN PHYSIOLOGICAL VARIABLES:
 	# n-ratio (= (cbf-1)./(cmro2-1)). Not used if cmro2 response is directly specified as an input
-	if len(P['n']) == K:             	# For venules (microvasculature)
+	if hasattr(P['n'], '__len__'):      # For venules (microvasculature)
 	    n      = P['n']                	# Depth-specific defined by user
 	else:
 	    n      = np.ones(K)*P['n']      # Default
 
 	# Grubb's exponent alpha (i.e CBF-CBV steady-state relationship)
-	if len(P['alpha_v']) == K:       			# For venules
+	if hasattr(P['alpha_v'], '__len__'):		# For venules
 	    alpha_v    = P['alpha_v']       		# Depth-specific defined by user 
 	else:
 	    alpha_v    = np.ones(K)*P['alpha_v']  	# Default
-	if len(P['alpha_d']) == K:       			# For ascending vein
+	if hasattr(P['alpha_d'], '__len__'):		# For ascending vein
 	    alpha_d    = P['alpha_d']             	# Depth-specific defined by user  
 	else:
 	    alpha_d    = np.ones(K)*P['alpha_d']  	# Default
 	alpha_p        = P['alpha_p']      			# For pial vein
 
 	# CBF-CBV uncoupling (tau) during inflation and deflation:
-	if len(P['tau_v_in']) == K:      			# For venules (inflation)
+	if hasattr(P['tau_v_in'], '__len__'):   	# For venules (inflation)
 	    tau_v_in  = P['tau_v_in']             	# Depth-specific defined by user
 	else:
 	    tau_v_in  = np.ones(K)*P['tau_v_in']  	# Default  
-	if len(P['tau_v_de']) == K:      			# For venules (deflation)
+	if hasattr(P['tau_v_de'], '__len__'):   	# For venules (deflation)
 	    tau_v_de  = P['tau_v_de']             	# Depth-specific defined by user  
 	else:
 	    tau_v_de  = np.ones(K)*P['tau_v_de']  	# Default  
-	if len(P['tau_d_in']) == K:      			# For ascending vein (inflation)
+	if hasattr(P['tau_d_in'], '__len__'):   	# For ascending vein (inflation)
 	    tau_d_in  = P['tau_d_in']	            # Depth-specific defined by user 
 	else:
 	    tau_d_in  = np.ones(K)*P['tau_d_in']   	# Default  
-	if len(P['tau_d_de']) == K:       			# For ascending vein (deflation)
+	if hasattr(P['tau_d_de'], '__len__'):   	# For ascending vein (deflation)
 	    tau_d_de  = P['tau_d_de']             	# Depth-specific defined by user 
 	else:
 	    tau_d_de  = np.ones(K)*P['tau_d_de']  	# Default
@@ -154,15 +156,15 @@ def LBR_model(P, cbf, *args):
 	rho_tp = P['rho_tp'] # In in tissue and CSF 
 
 	# Relaxation rates (in sec-1):
-	if len(P['R2s_t']) == K:  	# For tissue
+	if hasattr(P['R2s_t'],'__len__'):   	# For tissue
 	    R2s_t  = P['R2s_t']
 	else:
 	    R2s_t  = np.ones(K)*P['R2s_t']   	# (sec-1)
-	if len(P.R2s_v) == K:  					# For venules
+	if hasattr(P['R2s_v'],'__len__'):		# For venules
 	    R2s_v  = P['R2s_v']               	# (sec-1)
 	else:
 	    R2s_v  = np.ones(K)*P['R2s_v']  	# (sec-1) 
-	if len(P['R2s_d']) == K:  				# For ascening vein
+	if hasattr(P['R2s_d'],'__len__'): 		# For ascening vein
 	    R2s_d  = P['R2s_d']           		# (sec-1)
 	else:
 	    R2s_d  = np.ones(K)*P['R2s_d'] 		# (sec-1)  
@@ -199,7 +201,7 @@ def LBR_model(P, cbf, *args):
 	# Initial conditions
 	#------------------------------------------------------
 	Xk       = np.zeros((K,4))
-	Xp       = np.zeros((1,2))
+	Xp       = np.zeros((2))
 
 	yk       = Xk
 	yp       = Xp
@@ -214,10 +216,21 @@ def LBR_model(P, cbf, *args):
 
 	# integration step
 	dt = P['dt']
+	t_steps = int(P['T']/dt)
 
 	LBR       = np.zeros((int(P['T']/dt),K))
 	LBRpial   = np.zeros((int(P['T']/dt),K))
 
+	Y = {}
+	Y['fa'] = np.zeros((t_steps, K))
+	Y['mv'] = np.zeros((t_steps, K))
+	Y['qv'] = np.zeros((t_steps, K))
+	Y['qd'] = np.zeros((t_steps, K))
+	Y['qp'] = np.zeros((t_steps))
+	
+	Y['vv'] = np.zeros((t_steps, K))
+	Y['vd'] = np.zeros((t_steps, K))
+	Y['vp'] = np.zeros((t_steps, K))
 
 	##
 	# Simulation
@@ -241,29 +254,29 @@ def LBR_model(P, cbf, *args):
 	    # change in blood volume in venules:
 	    dv_v        = (f_a - f_v)/t0v
 	    # change in oxygen matabolims (CMRO2)
-	    if isempty(cmro2):
+	    if len(cmro2) == 0:
 	        m        = (f_a + n-1)/n  # (if not specified directly)
 	    else:
 	        m        = cmro2[t,:].T
 
 	    # change in deoxyhemoglobin content venules:
-	    dHb_v        = (m - f_v*Xk[:,1]./Xk[:,0])/t0v
+	    dHb_v        = (m - f_v*Xk[:,1]/Xk[:,0])/t0v
 
 
 	    # ASCENDING VEIN COMPARTMENTS:
 	    #--------------------------------------------------------------------------    
 	    # blood outflow from Kth depth of ascending vein compartment (deepest depth):
 	    if alpha_d[-1]>0:
-	        f_d[-1]  = (V0d[-1]*Xk[end,2]**(1/alpha_d[-1]) + tau_d[-1]*f_v[-1]*F0v[-1])/(V0d[-1]+F0d[-1]*tau_d[-1])
+	        f_d[-1]  = (V0d[-1]*Xk[-1,2]**(1/alpha_d[-1]) + tau_d[-1]*f_v[-1]*F0v[-1])/(V0d[-1]+F0d[-1]*tau_d[-1])
 	    else:
 	        f_d[-1]  = f_v[-1]*F0v[-1]/F0d[-1]
 
 	    # changes in blood volume and deoxyhemoglobin in ascending vein (deepest depth):
-	    dv_d[-1]     = (f_v[-1] - f_d[-1])./t0d[-1]
+	    dv_d[-1]     = (f_v[-1] - f_d[-1])/t0d[-1]
 	    dHb_d[-1]    = (f_v[-1]*Xk[-1,1]/Xk[-1,0] - f_d[-1]*Xk[-1,3]/Xk[-1,2])/t0d[-1]
 	    
 	    # blood outflow from other comparments of ascending vein:
-	    for i in range(K-1, 1, -1):
+	    for i in range(K-2, -1, -1):
 	        if alpha_d[i]>0:
 	            f_d[i]     = (V0d[i]*Xk[i,2]**(1/alpha_d[i]) + tau_d[i]*(f_v[i]*F0v[i]+f_d[i+1]*F0d[i+1]))/(V0d[i]+F0d[i]*tau_d[i])
 	        else:
@@ -271,7 +284,7 @@ def LBR_model(P, cbf, *args):
 	        
 	        # changes in blood volume and deoxyhemoglobin in ascending vein:
 	        dv_d[i]    = (f_v[i]*F0v[i]/F0d[i] + f_d[i+1]*F0d[i+1]/F0d[i] - f_d[i])/t0d[i]
-	        dHb_d[i]   = (f_v[i]*F0v[i]/F0d[i]*Xk[i,1]/Xkp[i,0] + f_d[i+1]*F0d[i+1]/F0d[i]*Xk[i+1,3]/Xk[i+1,2] - f_d[i]*Xk[i,3]/Xk[i,2])/t0d[i]
+	        dHb_d[i]   = (f_v[i]*F0v[i]/F0d[i]*Xk[i,1]/Xk[i,0] + f_d[i+1]*F0d[i+1]/F0d[i]*Xk[i+1,3]/Xk[i+1,2] - f_d[i]*Xk[i,3]/Xk[i,2])/t0d[i]
 
 	    
 	    # PIAL VEIN COMPARTMENT:
@@ -279,7 +292,7 @@ def LBR_model(P, cbf, *args):
 
 	    # blood outflow from pial vein:
 	    if alpha_p>0:
-	        f_p     = (V0p*Xp[0]^(1/alpha_p) + F0p*tau_p*f_d[0])/(V0p+F0p*tau_p)
+	        f_p     = (V0p*Xp[0]**(1/alpha_p) + F0p*tau_p*f_d[0])/(V0p+F0p*tau_p)
 	    else:
 	        f_p     = f_d[0]
 	    
@@ -294,8 +307,8 @@ def LBR_model(P, cbf, *args):
 	    yk[:,2]  = yk[:,2] + dt*(dv_d/Xk[:,2])
 	    yk[:,3]  = yk[:,3] + dt*(dHb_d/Xk[:,3])
 	    
-	    yp[:,0]  = yp[:,0] + dt*(dv_p/Xp[0])
-	    yp[:,1]  = yp[:,1] + dt*(dHb_p/Xp[1])
+	    yp[0]  = yp[0] + dt*(dv_p/Xp[0])
+	    yp[1]  = yp[1] + dt*(dHb_p/Xp[1])
 
 	    Xk        = yk
 	    Xp        = yp
@@ -307,7 +320,8 @@ def LBR_model(P, cbf, *args):
 	    # check for deflation (negative derivative)
 	    tau_v[dv_v<0]  = tau_v_de[dv_v<0]
 	    tau_d[dv_d<0]  = tau_d_de[dv_d<0]
-	    tau_p[dv_p<0]  = tau_p_de[dv_p<0]
+	    if dv_p<0:
+	    	tau_p  = tau_p_de
 	    
 	    # venules:
 	    m_v  = m;
@@ -317,16 +331,15 @@ def LBR_model(P, cbf, *args):
 	    v_d  = np.exp(yk[:,2])
 	    q_d  = np.exp(yk[:,3])
 	    # pail vein:
-	    v_p  = np.exp(yp[:,0])
-	    q_p  = np.exp(yp[:,1])
-	    
+	    v_p  = np.exp(yp[0])
+	    q_p  = np.exp(yp[1])
 	    
 	    # save physiological variable:
 	    Y['fa'][t,:] = f_a
 	    Y['mv'][t,:] = m_v
 	    Y['qv'][t,:] = q_v
 	    Y['qd'][t,:] = q_d
-	    Y['qp'][t,:] = q_p
+	    Y['qp'][t]   = q_p
 
 	    Y['vv'][t,:] = v_v
 	    Y['vd'][t,:] = v_d
@@ -364,3 +377,96 @@ def LBR_model(P, cbf, *args):
 	Y['tt0']  = tt0
 
 	return LBR, LBRpial, Y
+
+
+
+def LBR_parameters(K, P):
+	'''
+	INPUT:  
+		K - Number of cortical depths
+
+	OUTPUT: 
+		P - structure with all default parameters for LBR model
+	
+	AUTHOR: Martin Havlicek, 5 August, 2019
+	'''
+
+	#--------------------------------------------------------------------------
+	P['T'] = 30     # Default time-course duration (in seconds)
+
+	P['K']  = K     # Number of depths
+
+	if K<10:
+	    P['dt'] = 0.01  # default integration step
+	elif K<20:
+	    P['dt'] = 0.005 # smaller for higher number of cortical depths
+	else:
+	    P['dt'] = 0.001
+
+	depths = np.linspace(0,100,2*P['K']+1) # Normalized distance to the center of individual depths (in %)
+	P['l']    = depths[1::2]
+
+	# LAMINAR HEMODYNAMIC MODEL:
+	#--------------------------------------------------------------------------
+	# Baseline physiological parameters:
+	P['V0t']   = 2.5  	# Total (regional) amount of CBV0 in the gray matter (in mL) [1-6]
+	P['V0t_p'] = 1  	# Total (regional) amount of CBV0 in the pial vein (mL) [1-6]
+
+	P['w_v'] = 0.5  # CBV0 fraction of microvasculature (i.e. venules here )with respect to the total amount 
+	P['x_v'] = []   # CBV0 fraction across depths in venules 
+	P['x_d'] = []   # CBV0 fraction across depths in ascending veins
+	P['s_v'] = 0    # Slope of CBV increase (decrease) in venules [0-0.3]
+	P['s_d'] = 0.3  # Slope of CBV increase in ascending vein     [0-1.5]
+
+	P['t0v'] = 1    # Transit time through microvasculature(in second)
+	P['E0v'] = 0.35 # Baseline oxygen extraction fraction in venules
+	P['E0d'] = 0.35 # Baseline oxygen extraction fraction in venules
+	P['E0p'] = 0.35 # Baseline oxygen extraction fraction in venules
+
+	# Parameters describing relative relationship between physiological variable:
+	# CBF-CBV coupling (steady-state)
+	P['alpha_v'] = 0.3 	# For venules
+	P['alpha_d'] = 0.2  # For ascending vein
+	P['alpha_p'] = 0.1  # For pial vein
+
+	# CBF-CMRO2 coupling (steady-state)
+	P['n'] = 4          # n-ratio   (Ref. Buxton et al. (2004) NeuroImage)
+
+	# CBF-CBV dynamic uncoupling 
+	P['tau_v_in'] = 2  # For venules - inflation 
+	P['tau_v_de'] = 2  #             - deflation
+
+	P['tau_d_in'] = 2  # For ascending vein - inflation 
+	P['tau_d_de'] = 2  #                    - deflation
+
+	P['tau_p_in'] = 2  # For pial vein - inflation 
+	P['tau_p_de'] = 2  #               - deflation
+
+	# LAMINAR BOLD SIGNAL MODEL:
+	#--------------------------------------------------------------------------
+	P['TE']     = 0.028     # echo-time (in sec)
+
+	# Hematocrit fraction
+	P['Hct_v']  = 0.35 	 	# For venules, Ref. Lu et al. (2002) NeuroImage
+	P['Hct_d']  = 0.38		# For ascending vein
+	P['Hct_p']  = 0.42  	# For pial vein
+
+
+	P['B0']     = 7   					# Magnetic field strenght (in Tesla)  
+	P['gyro']   = 2*np.pi*42.6*10**6  	# Gyromagnetic constant for Hydrogen
+	P['suscep'] = 0.264*10**-6       	# Susceptibility difference between fully oxygenated and deoxygenated blood
+
+	# Water proton density:
+	P['rho_t']  = 0.89                 		# For gray matter tissue 
+	P['rho_v']  = 0.95 - P['Hct_v']*0.22  	# For blood (venules) Ref. Lu et al. (2002) NeuroImage
+	P['rho_d']  = 0.95 - P['Hct_d']*0.22  	# For blood (ascending vein)
+	P['rho_p']  = 0.95 - P['Hct_p']*0.22  	# For blood (pial vein)
+	P['rho_tp'] = 0.95                 		# For gray matter tissue % CSF   
+
+	# Relaxation rates for 7 T (in sec-1)
+	P['R2s_t']  = 34  # For gray matter tissue
+	P['R2s_v']  = 80  # For blood (venules)
+	P['R2s_d']  = 85  # For blood (ascending vein)
+	P['R2s_p']  = 90  # For blood (pial vein)
+
+	return P
