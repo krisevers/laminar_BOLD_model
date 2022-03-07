@@ -82,7 +82,7 @@ plt.xlabel('Time (s)')
 plt.ylabel('Relative dHb in AV (%)')
 plt.legend([p[0], p[1], p[2], p[3]],['L23','L4', 'L5', 'L6'])
 plt.tight_layout(pad=1)
-plt.savefig('svg/physiological_responses.svg')
+plt.savefig('svg/DMF_physiological_responses.svg')
 
 # Display laminar BOLD response
 plt.figure(figsize=(10, 5)),
@@ -123,6 +123,6 @@ plt.ylim(bottom=0, top=15)
 plt.xlabel('1 - Cortical depth (%)')
 plt.ylabel('TTU (s)')
 plt.tight_layout(pad=1)
-plt.savefig('svg/laminar_BOLD_response.svg')
+plt.savefig('svg/DMF_laminar_BOLD_response.svg')
 
 plt.show()
