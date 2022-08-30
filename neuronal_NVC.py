@@ -56,7 +56,7 @@ def neuronal_NVC_model(U, P):
 	    # Neuronal (excitatory & inhibitory)
 	    yn[:,0]   = yn[:,0] + dt*(np.dot(A, Xn[:,0]) - MU*Xn[:,1] + np.dot(C, U['u'][t,:].T))
 
-	    yn[:,1]   = yn[:,1] + dt*(LAM*(-Xn[:,1] +  Xn[:,0]))
+	    yn[:,1]   = yn[:,1] + dt*(LAM*(-Xn[:,1] + Xn[:,0]))
 	    #----------------------------------------------------------------------
 	    # Vasoactive signal:
 	    yn[:,2]   = yn[:,2] + dt*(Xn[:,0] - c1*(Xn[:,2]))

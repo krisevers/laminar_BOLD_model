@@ -26,7 +26,10 @@ U['u'][onset:offset,:] = 1             				# Set one during stimulus window
 neuro, cbf  = neuronal_NVC_model(U,P) 				# Generate the neuronal and cerebral blood flow response (CBF)
 
 plt.figure()
+plt.subplot(121)
 plt.plot(neuro)
+plt.subplot(122)
+plt.plot(cbf)
 plt.show()
 
 # Specify LBR model:
@@ -38,7 +41,7 @@ P['alpha_v']   = 0.35   	# Choose steady-state CBF-CBV coupling for venules
 P['alpha_d']   = 0.2        # Choose steady-state CBF-CBV coupling for ascending vein
 P['tau_d_de']  = 30         # Choose dynamic CBF-CBV uncoupling for ascending vein
 
-LBR, LBRpial, Y = LBR_model(P,cbf);  # Generate the laminar bold response
+LBR, LBRpial, Y = LBR_model(P,cbf)  # Generate the laminar bold response
 
 
 time_axis = np.arange(0, P['T'], P['dt']) - onset*P['dt']	# time axis in seconds
