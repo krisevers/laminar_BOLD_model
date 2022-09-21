@@ -4,7 +4,12 @@ import matplotlib as mpl
 
 from neuronal_NVC import *
 
+from neuronal import *
+from NVC import *
+
 from LBR import *
+
+import IPython
 
 K = 4  # number of depths
 
@@ -21,7 +26,10 @@ onset = int(3 / P['dt'])  						# Stimulus onset time (in seconds)
 offset = int(onset + dur) 			 			# Stimulus offset time (in seconds)
 U['u'] = np.zeros((int(P['T'] / P['dt']), K))  	# Matrix with input vectors to the neuronal model (one column per depth)
 U['u'][onset:offset, :] = 1  					# Set one during stimulus window
-neuro, cbf = neuronal_NVC_model(U, P)  			# Generate the neuronal and cerebral blood flow response (CBF)
+# neuro, cbf = neuronal_NVC_model(U, P)  			# Generate the neuronal and cerebral blood flow response (CBF)
+
+neuro = neuronal_model(U, P)
+cbf   = NVC_model(U, P)
 
 plt.figure()
 plt.subplot(121)
@@ -29,6 +37,8 @@ plt.plot(neuro)
 plt.subplot(122)
 plt.plot(cbf)
 plt.show()
+
+# IPython.embed()
 
 # Specify LBR model:
 # --------------------------------------------------------------------------

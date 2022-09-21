@@ -3,8 +3,7 @@ import copy
 
 import IPython
 
-
-def neuronal_NVC_model(U, P):
+def NVC_model(neuro, P):
     """
     INPUT:
         K - Number of cortical depths
@@ -41,22 +40,6 @@ def neuronal_NVC_model(U, P):
     cbf = np.zeros((int(P['T'] / dt), K))
     for t in range(int(P['T'] / dt)):
         Xn[:, 3] = np.exp(Xn[:, 3])
-
-        A = np.eye(K) * sigma
-        MU = np.ones(K) * mu
-        LAM = np.ones(K) * lambda_
-        for i in range(len(Bsigma)):
-            A = A + diag(Bsigma[:, i]) * U['m'][t, i]
-        for i in range(len(Bmu)):
-            MU = MU + Bmu[:, i] * U['m'][t, i]
-        for i in range(len(Blambda)):
-            LAM = LAM + Blambda[:, i] * U['m'][t, i]
-
-        # ----------------------------------------------------------------------
-        # Neuronal (excitatory & inhibitory)
-        yn[:, 0] = yn[:, 0] + dt * (np.dot(A, Xn[:, 0]) - MU * Xn[:, 1] + np.dot(C, U['u'][t, :].T))
-
-        yn[:, 1] = yn[:, 1] + dt * (LAM * (-Xn[:, 1] + Xn[:, 0]))
         # ----------------------------------------------------------------------
         # Vasoactive signal:
         yn[:, 2] = yn[:, 2] + dt * (Xn[:, 0] - c1 * (Xn[:, 2]))
@@ -71,42 +54,3 @@ def neuronal_NVC_model(U, P):
         neuro[t, :] = yn[:, 0].T
 
     return neuro, cbf
-
-
-def neuronal_NVC_parameters(K, P):
-    '''
-    INPUT:
-        K - Numer of cortical depths
-
-    OUTPUT:
-        P - structure with all default parameters for neuronal-NVC model
-
-    AUTHOR: Matrin Havlicek, 5 August, 2019
-    '''
-
-    P['K'] = K
-
-    if K < 10:
-        P['dt'] = 0.01  # default integration step
-    elif K < 20:
-        P['dt'] = 0.005  # smaller for higher number of cortical depths
-    else:
-        P['dt'] = 0.001
-
-    # Neuronal parameter:
-    # --------------------------------------------------------------------------
-    P['sigma'] = -3
-    P['mu'] = 1.5
-    P['lambda'] = 0.2
-    P['Bsigma'] = []
-    P['Bmu'] = []
-    P['Blambda'] = []
-    P['C'] = np.eye(K)
-
-    # NVC parameters:
-    # --------------------------------------------------------------------------
-    P['c1'] = 0.6
-    P['c2'] = 1.5
-    P['c3'] = 0.6
-
-    return P
