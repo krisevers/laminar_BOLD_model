@@ -3,18 +3,19 @@ import copy
 
 def neuronal_model(U, P):
 
-    K = P['K']
+    K = P['K']  # number of depths
+    M = P['M']  # number of populations
 
     # Neuronal parameters:
     # --------------------------------------------------------------------------
     C = P['C']                      # external connection
 
     # Initial condtions:
-    Xn = np.zeros(K*2)
-    yn = np.zeros(K*2)
+    Xn = np.zeros(M)
+    yn = np.zeros(M)
 
     dt = P['dt']
-    neuro = np.zeros((int(P['T'] / dt), K*2))
+    neuro = np.zeros((int(P['T'] / dt), M))
 
     for t in range(int(P['T'] / dt)):
 
@@ -27,7 +28,8 @@ def neuronal_model(U, P):
     return neuro
 
 def neuronal_parameters(K, P):
-    P['K'] = K
+    P['K'] = K      # number of depths
+    P['M'] = 2*K    # number of populations
 
     if K < 10:
         P['dt'] = 0.01  # default integration step
