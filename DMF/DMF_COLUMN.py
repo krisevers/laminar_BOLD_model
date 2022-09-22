@@ -107,14 +107,14 @@ if __name__=='__main__':
 	Kext = np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100])
 	Wext = Kext * J_E
 
-	T = 30
+	T = 2
 	dt = 1e-3
 	I, R, S = DMF(W, Wext, Iext, params=params, stim=stim, t_sim=T, dt=dt)
 
 	# Simulation results
-	np.save('DMF/I.npy', I)	# I: Input current
-	np.save('DMF/R.npy', R)	# R: Firing rate
-	np.save('DMF/S.npy', S)	# S: Synaptic gating
+	np.save('I.npy', I)	# I: Input current
+	np.save('R.npy', R)	# R: Firing rate
+	np.save('S.npy', S)	# S: Synaptic gating
 
 	# Simulation parameters
 	P = {'T': 		T,				# Simulation time (in seconds)
@@ -124,4 +124,4 @@ if __name__=='__main__':
 		 'offset': 	stim['offset'],	# Stimulus offset (in seconds)
 		 'Iext': 	stim['Iext']	# Stimulus amplitude
 		 }	
-	np.save('DMF/P.npy', P)
+	np.save('P.npy', P)

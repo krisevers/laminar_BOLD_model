@@ -2,7 +2,7 @@ import numpy as np
 import pylab as plt
 import matplotlib as mpl
 
-from neuronal import *
+from DMF import *
 from NVC import *
 
 from LBR import *
@@ -11,11 +11,11 @@ K = 4  # number of depths
 
 # Laminar BOLD response to short 2 sec stimulus
 # ==========================================================================
-# Specify neuronal and NVC model:
+# Specify and simulate DMF model
 # --------------------------------------------------------------------------
-P_neuro = {}
+P_DMF = {}
 U = {}
-P_neuro = neuronal_parameters(K, P_neuro)  			     	# Get default parameters (see inside the function)
+P_neuro = DMF_parameters(K, P_DMF)  			     	    # Get default parameters (see inside the function)
 P_neuro['T'] = 30  									        # Total length of the response (in seconds)
 dur = 2 / P_neuro['dt']  								    # Stimulus duration (in second, e.g. 2 sec) ... dt - refers to integration step
 onset = int(3 / P_neuro['dt'])  						    # Stimulus onset time (in seconds)
@@ -23,15 +23,15 @@ offset = int(onset + dur) 			 			            # Stimulus offset time (in seconds)
 U['u'] = np.zeros((int(P_neuro['T'] / P_neuro['dt']), K*2)) # Matrix with input vectors to the neuronal model (one column per depth)
 U['u'][onset:offset, ::2] = 1  					            # Set one during stimulus window
 
-neuro = neuronal_model(U, P_neuro)
+X = DMF(U, P_neuro)
 
 fig = plt.figure(figsize=(4, 6))
 k = 0
 for i in range(K):
     plt.subplot(int('41{}'.format(i+1)))
     plt.title('Layer {}'.format(i+1))
-    plt.plot(neuro[:, 0+k], lw=2, color='blue', label='E')
-    plt.plot(neuro[:, 1+k], lw=2, color='red',  label='I')
+    plt.plot(X[:, 0+k], lw=2, color='blue', label='E')
+    plt.plot(X[:, 1+k], lw=2, color='red',  label='I')
     k += 2
 fig.text(0.5, 0.0, 'Time [ms]', ha='center')
 fig.text(0.0, 0.5, 'Neuronal Response', va='center', rotation='vertical')
@@ -52,6 +52,8 @@ fig.text(0.0, 0.5, 'Neuronal Response', va='center', rotation='vertical')
 plt.tight_layout()
 plt.show()
 
+
+K = np.shape(X)[0]     # number of depths
 
 # Specify LBR model:
 # --------------------------------------------------------------------------

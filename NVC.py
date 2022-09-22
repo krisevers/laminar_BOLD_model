@@ -1,30 +1,9 @@
 import numpy as np
-import copy
-
-import IPython
 
 def NVC_model(neuro, P):
-    """
-    INPUT:
-        K - Number of cortical depths
-
-    OUTPUT:
-        Y - structure with all baseline and relative physiological variables
-
-    AUTHOR: Martin Havlicek, 5 August, 2019
-    """
 
     K = P['K']
 
-    # Neuronal parameters:
-    # --------------------------------------------------------------------------
-    sigma = P['sigma']  # self-inhibitory connection
-    mu = P['mu']  # inhibitory-excitatory connection
-    lambda_ = P['lambda']  # inhibitory gain
-    Bsigma = P['Bsigma']  # modulatory parameter of self-inhibitory connection
-    Bmu = P['Bmu']  # modulatory parameter of inhibitory-excitatory connection
-    Blambda = P['Blambda']  # modulatory parameter of inhibitory connection
-    C = P['C']
     # NVC parameters:
     # --------------------------------------------------------------------------
     c1 = P['c1']
@@ -32,25 +11,46 @@ def NVC_model(neuro, P):
     c3 = P['c3']
 
     # Initial condtions:
-    Xn = np.zeros((K, 4))
-    yn = np.zeros((K, 4))
+    Xvaso    = np.zeros(K)
+    Yvaso    = np.zeros(K)
+    Xinflow  = np.zeros(K)
+    Yinflow  = np.zeros(K)
 
     dt = P['dt']
-    neuro = np.zeros((int(P['T'] / dt), K))
     cbf = np.zeros((int(P['T'] / dt), K))
+
     for t in range(int(P['T'] / dt)):
-        Xn[:, 3] = np.exp(Xn[:, 3])
+        Xinflow = np.exp(Xinflow)
         # ----------------------------------------------------------------------
         # Vasoactive signal:
-        yn[:, 2] = yn[:, 2] + dt * (Xn[:, 0] - c1 * (Xn[:, 2]))
+        Yvaso = Yvaso + dt * (neuro[t] - c1 * Xvaso)
         # ----------------------------------------------------------------------
         # Inflow:
-        df_a = c2 * Xn[:, 2] - c3 * (Xn[:, 3] - 1)
-        yn[:, 3] = yn[:, 3] + dt * (df_a / Xn[:, 3])
+        df_a = c2 * Xvaso - c3 * (Xinflow - 1)
+        Yinflow = Yinflow + dt * (df_a / Xinflow)
 
-        Xn = copy.deepcopy(yn)
+        Xvaso   = np.copy(Yvaso)
+        Xinflow = np.copy(Yinflow)
 
-        cbf[t, :] = np.exp(yn[:, 3]).T
-        neuro[t, :] = yn[:, 0].T
+        cbf[t, :] = np.exp(Yinflow).T
 
-    return neuro, cbf
+    return cbf
+
+def NVC_parameters(K, P):
+
+    P['K'] = K
+
+    if K < 10:
+        P['dt'] = 0.01  # default integration step
+    elif K < 20:
+        P['dt'] = 0.005  # smaller for higher number of cortical depths
+    else:
+        P['dt'] = 0.001
+
+    # NVC parameters:
+    # --------------------------------------------------------------------------
+    P['c1'] = 0.6
+    P['c2'] = 1.5
+    P['c3'] = 0.6
+
+    return P

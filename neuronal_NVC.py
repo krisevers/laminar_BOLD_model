@@ -5,16 +5,6 @@ import IPython
 
 
 def neuronal_NVC_model(U, P):
-    """
-    INPUT:
-        K - Number of cortical depths
-
-    OUTPUT:
-        Y - structure with all baseline and relative physiological variables
-
-    AUTHOR: Martin Havlicek, 5 August, 2019
-    """
-
     K = P['K']
 
     # Neuronal parameters:
@@ -74,15 +64,6 @@ def neuronal_NVC_model(U, P):
 
 
 def neuronal_NVC_parameters(K, P):
-    '''
-    INPUT:
-        K - Numer of cortical depths
-
-    OUTPUT:
-        P - structure with all default parameters for neuronal-NVC model
-
-    AUTHOR: Matrin Havlicek, 5 August, 2019
-    '''
 
     P['K'] = K
 
