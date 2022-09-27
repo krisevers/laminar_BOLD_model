@@ -6,26 +6,45 @@ close all; clear all;
 P.K = 4;
 P.M = 2*P.K;
 
-A = [-3.0  -1.5  ; 
-      0.2  -0.2 ];
-ACell = repmat({A}, 1, P.K);
-P.A = blkdiag(ACell{:});
+P = DMF_parameters(P);
 
-P.C = 1;
+P.W_rec = ...
+         [0.51  -1.000 0.454 -0.433 0.037 -0.000 0.025 -0.000;
+          0.195 -0.225 0.046 -0.076 0.025 -0.000 0.004 -0.000;
+          0.039 -0.034 0.274 -0.780 0.008 -0.000 0.164 -0.000;
+          0.091 -0.004 0.111 -0.234 0.001 -0.000 0.099 -0.000;
+          0.119 -0.081 0.062 -0.007 0.023 -0.108 0.016 -0.000;
+          0.014 -0.008 0.007 -0.001 0.004 -0.019 0.001 -0.000;
+          0.052 -0.025 0.075 -0.059 0.046 -0.014 0.094 -0.485;
+          0.025 -0.001 0.002 -0.000 0.004 -0.001 0.032 -0.061];
 
-P.T  = 30;
-P.dt = 0.01;
+P.C = 1.0;
 
-U = zeros(P.M, P.T/P.dt);
-dur    = 2/P.dt;
-onset  = 3/P.dt;
+P.T  = 5;
+P.dt = 1e-4;
+
+nu_ext = 8;
+K_ext = [20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948];
+W_ext = K_ext' * P.J_E;
+
+U = ones(P.M, P.T/P.dt) .* W_ext * nu_ext;
+dur    = 3/P.dt;
+onset  = 1/P.dt;
 offset = onset + dur;
-U(1,onset:offset) = 0.25;
-U(3,onset:offset) = 0.50;
-U(5,onset:offset) = 0.75;
-U(7,onset:offset) = 1.00;
 
-X = DCM_model(P, U);
+K_inp = 105.3605 * 100;
+W_inp = K_inp .* P.J_E;
+
+U(1,onset:offset) = nu_ext * W_ext(1) + 0.00  * W_inp;
+U(2,onset:offset) = nu_ext * W_ext(2) + 0.00  * W_inp;
+U(3,onset:offset) = nu_ext * W_ext(3) + 20.00 * W_inp;
+U(4,onset:offset) = nu_ext * W_ext(4) + 20.00 * W_inp;
+U(5,onset:offset) = nu_ext * W_ext(5) + 0.00  * W_inp;
+U(6,onset:offset) = nu_ext * W_ext(6) + 0.00  * W_inp;
+U(7,onset:offset) = nu_ext * W_ext(7) + 20.00 * W_inp;
+U(8,onset:offset) = nu_ext * W_ext(8) + 20.00 * W_inp;
+
+X = DMF_model(P, U);
 
 %==========================================================================
 % NVC parameters and model:
@@ -42,52 +61,4 @@ hold on
 subplot(211), plot(time_axis, X),   ylabel('Neuronal Response'),   xlabel('Time (s)'), xlim([time_axis(1), time_axis(end)]);
 subplot(212), plot(time_axis, cbf), ylabel('Cerebral Blood Flow'), xlabel('Time (s)'), xlim([time_axis(1), time_axis(end)]);
 hold off
-  
-% Specify LBR model:
-%--------------------------------------------------------------------------  
-P.H       = LBR_parameters(P.K); % get default parameters (see inside the function), 
-                               % NOTE: By default baseline CBV is increasing towards the surface in the ascending vein
-P.H.T     = P.T;               % copy the lenght of the response from neuronal specification
-  
-P.H.alpha_v   = 0.35;          % Choose steady-state CBF-CBV coupling for venules
-P.H.alpha_d   = 0.2;           % Choose steady-state CBF-CBV coupling for ascending vein
-P.H.tau_d_de  = 30;            % Choose dynamic CBF-CBV uncoupling for ascending vein
-
-[LBR,Y] = LBR_model(P.H,cbf);  % Generate the laminar bold response
-
-
-time_axis = [0:P.H.dt:P.H.T-P.H.dt] - onset*P.dt; % time axis in seconds
-
-% Display underlying physiological responses
-figure(2),
-subplot(231), plot(time_axis,cbf); xlim([time_axis(1), time_axis(end)]); ylim([0.8 1.6]);
-xlabel('Time (s)'); ylabel('Relative CBF in MV (%)'); axis square; 
-subplot(232), plot(time_axis,Y.mv); xlim([time_axis(1), time_axis(end)]); ylim([0.8 1.6]);
-xlabel('Time (s)'); ylabel('Relative CMRO_2 in MV (%)'); axis square;
-subplot(233), plot(time_axis,Y.vv); xlim([time_axis(1), time_axis(end)]); ylim([0.8 1.6]);
-xlabel('Time (s)'); ylabel('Relative CBV in MV (%)'); axis square;
-subplot(234), plot(time_axis,Y.qv); xlim([time_axis(1), time_axis(end)]); ylim([0.7 1.2]);
-xlabel('Time (s)'); ylabel('Relative dHb in MV (%)'); axis square;
-subplot(235), plot(time_axis,Y.vd); xlim([time_axis(1), time_axis(end)]); ylim([0.8 1.6]);
-xlabel('Time (s)'); ylabel('Relative CBV in AV (%)'); axis square;
-subplot(236), p = plot(time_axis,Y.qd); xlim([time_axis(1), time_axis(end)]); ylim([0.7 1.2]);
-xlabel('Time (s)'); ylabel('Relative dHb in AV (%)'); axis square; legend([p(1) p(end)],{'Upper','Lower'});
- 
-
-% Display laminar BOLD response
-figure(3),
-subplot(131), p = plot(time_axis,LBR); xlim([time_axis(1), time_axis(end)]); ylim([-1 4]);  %                         
-xlabel('Time (s)'); ylabel('LBR (%)'); axis square;  legend([p(1) p(end)],{'Upper','Lower'});
-
-% calculate time to peak (TTP) and time to undershoot (TTU) with respect to
-% the stimulus onset and offset, respectively
-[Peak_Amp,Peak_Pos] = max(LBR(onset:end,:));
-[PSU_Amp,PSU_Pos]   = min(LBR(offset:end,:));
-TTP = time_axis(onset+Peak_Pos)';
-TTU = time_axis(offset+PSU_Pos)'-(offset-onset)*P.dt;  
-% Display TTP and TTU as function of cortical depth
-subplot(132), plot(P.H.l,flipud(TTP),'.-'); xlim([0 100]); ylim([0 12]);  %                          
-xlabel('1 - Cortical depth (%)'); ylabel('TTP (s)'); axis square;
-subplot(133), plot(P.H.l,flipud(TTU),'.-'); xlim([0 100]); ylim([0 12]);  %                         
-xlabel('1 - Cortical depth (%)'); ylabel('TTU (%)'); axis square;
   

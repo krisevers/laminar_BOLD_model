@@ -1,4 +1,4 @@
-function P = DMF_parameters()
+function P = DMF_parameters(P)
 
 g = -4;                 % relative inhibitory synaptic strength
 P.J_E = 87.8e-3;        % excitatory synaptic strength (nA)

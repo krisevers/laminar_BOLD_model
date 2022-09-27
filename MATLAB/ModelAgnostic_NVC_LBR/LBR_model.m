@@ -1,62 +1,5 @@
 function [LBR,Y,LBRpial] = LBR_model(P,cbf,cmro2)
-% LBR_model calculates laminar BOLD response (LBR) as in detail described by 
-%           Havlicek, M. & Uludag, K. (2019) BioRxiv  
-%
-% INPUTS:
-%       P - structure of model parameters (see LBR_parameters.m)
-%
-%       cbf - matrix defining laminar cerebral blood flow (CBF) response, (time,depths). (Required);
-%
-%       cmro2 - matrix defining laminar changes in oxygen metabolism (CMRO2), (time,depth). 
-% OUTPUTS:
-%       LBR - matrix containing laminar BOLD responses in perecent signal change (time,depths)
-%   
-%       Y - structure with all baseline and relative physiological
-%       variables underlying BOLD response
-%
-%       LBRpial - BOLD response of the pial vein in perecent signal change (0th depth) (time,1)
-%
-% AUTHOR: Martin Havlicek, 5 August, 2019
-%
-% REFERENCE: Havlicek, M. & Uludag, K. (2019) A dynamical model of the
-%            laminar BOLD response, BioRxiv, doi: https://doi.org/10.1101/609099 
-%
-% EXAMPLE:
-%        For steady-state:
-%               K = 6;                       % Number of depths
-%               P = LBR_parameters(K);       % Get parameter structure with default values
-%               cbf = ones(P.T/P.dt,K)*1.6;  % Define model input (Relative blood flow across depths)
-%               P.s_d = 0.4;                 % Define the slope of increase of CBV0 in the ascening vein
-%               [LBR,Y] = LBR_model(P,cbf);  % Generate the LBR
-%               figure(1), 
-%               plot(P.l,flipud(LBR(end,:)')); % plot the LBR profile as a function of normalized cortical depth
-%               xlim([0 100]); ylim([0 6]); xlabel('1 - Cortical depth (%)'); ylabel('LBR (%)'); axis square;
-%
-%        For dynamic response:
-%               K = 6;  
-%               P.N = neuronal_NVC_parameters(K);  % consider default parameters
-%               P.N.T = 30; % (in seconds)
-%               P.H = LBR_parameters(K);
-%               P.H.T  = P.N.T;
-%               P.H.dt = P.N.dt;
-%               U.u = zeros(P.N.T/P.N.dt,K);
-%               dur = 2/P.N.dt; % 2 sec stimulus
-%               onset     = 2/P.N.dt;
-%               offset    = onset + dur;
-%               U.u(onset:offset,:) = 1;
-%               [neuro, cbf]  = neuronal_NVC_model(P.N,U);
-%               P.H.alpha_v   = 0.35;
-%               P.H.alpha_d   = 0.2;
-%               P.H.tau_d_de  = 30;
-%               [LBR,Y]       = LBR_model(P.H,cbf);
-%               time_axis = [0:P.H.dt:P.H.T-P.H.dt];
-%               figure(1), 
-%               subplot(121), plot(time_axis,cbf); xlim([time_axis(1), time_axis(end)]); ylim([0.5 2]); 
-%                            xlabel('1 - Cortical depth (%)'); ylabel('Relative CBF (%)'); axis square;
-%               subplot(122), plot(time_axis,LBR); xlim([time_axis(1), time_axis(end)]); ylim([-1 4]);  %                           xlabel('1 - Cortical depth (%)'); ylabel('LBR (%)'); axis square;
-%
-%--------------------------------------------------------------------------
-% 
+
 if nargin<3
     cmro2 = [];
 elseif nargin<2
@@ -81,14 +24,14 @@ s_v       = P.s_v;    % Slope of CBV0 increase towards the surface in venules
 s_d       = P.s_d;    % Slope of CBV0 increase towards the surface in ascending vein 
 
 % Depth-specific CBV0:
-if length(P.x_v) == K,             % For venules
+if length(P.x_v) == K              % For venules
     x_v  = P.x_v;                  % Depth-specific fractions defined by user
 else
     x_v  = 10+s_v*flipud(P.l(:));  % Possibility to define linear increase (default s_v = 0)
 end
 x_v      = x_v./sum(x_v);          % Fraction of CBV0 across depths in venules 
 
-if length(P.x_v) == K,             % For ascending vein
+if length(P.x_v) == K              % For ascending vein
     x_d  = P.x_d;                  % Depth-specific fractions defined by user
 else
     x_d  = 10+s_d*flipud(P.l(:));  % Possibility to define linear increase 
@@ -100,11 +43,11 @@ V0d      = V0t*w_d*x_d;            % CBV0 in ascending vein
 V0p      = V0t_p;                  % CBV0 in pial vein
 
 % Transit time through venules (or microvasculature in general)
-if length(P.t0v) == K,
+if length(P.t0v) == K
     t0v    = P.t0v;              % depth-specific defined by user
 else
     t0v    = ones(K,1).*P.t0v;   % default
-end;
+end
 
 % Depth-specific baseline CBF:  
 F0v     = V0v./t0v;          % Note: can be also defined directly and t0v calculated from V0v and F0v
@@ -122,12 +65,12 @@ tt0d    = mean(cumsum(t0d));
 tt0     = tt0v + tt0d; % It must equal V0t./sum(F0v)
 
 % Baseline oxygen extraction fraction
-if length(P.E0v) == K,
+if length(P.E0v) == K
    E0v        = P.E0v;     % depth-specific defined by user
 else
    E0v        = ones(K,1).*P.E0v;     % default
 end
-if length(P.E0d) == K,
+if length(P.E0d) == K
    E0d        = P.E0d;     % depth-specific defined by user
 else
    E0d        = ones(K,1).*P.E0d;    % default  
@@ -137,19 +80,19 @@ E0p        = P.E0p;
 %% PARAMETERS DESCRIBING RELATIVE RELATIONSHIPS BETWEEN PHYSIOLOGICAL VARIABLES:
 %
 % n-ratio (= (cbf-1)./(cmro2-1)). Not used if cmro2 response is directly specified as an input
-if length(P.n) == K,             % For venules (microvasculature)
+if length(P.n) == K             % For venules (microvasculature)
     n      = P.n;                % Depth-specific defined by user
 else
     n      = ones(K,1)*P.n;      % Default
-end;
+end
 
 % Grubb's exponent alpha (i.e CBF-CBV steady-state relationship)
-if length(P.alpha_v) == K,       % For venules
+if length(P.alpha_v) == K       % For venules
     alpha_v    = P.alpha_v;             % Depth-specific defined by user 
 else
     alpha_v    = ones(K,1).*P.alpha_v;  % Default
-end;
-if length(P.alpha_d) == K,       % For ascending vein
+end
+if length(P.alpha_d) == K       % For ascending vein
     alpha_d    = P.alpha_d;             % Depth-specific defined by user  
 else
     alpha_d    = ones(K,1).*P.alpha_d;  % Default
@@ -157,22 +100,22 @@ end
 alpha_p        = P.alpha_p;      % For pial vein
 
 % CBF-CBV uncoupling (tau) during inflation and deflation:
-if length(P.tau_v_in) == K,      % For venules (inflation)
+if length(P.tau_v_in) == K      % For venules (inflation)
     tau_v_in  = P.tau_v_in;             % Depth-specific defined by user
 else
     tau_v_in  = ones(K,1).*P.tau_v_in;  % Default  
 end
-if length(P.tau_v_de) == K,      % For  venules (deflation)
+if length(P.tau_v_de) == K      % For  venules (deflation)
     tau_v_de  = P.tau_v_de;             % Depth-specific defined by user  
 else
     tau_v_de  = ones(K,1).*P.tau_v_de;  % Default  
 end
-if length(P.tau_d_in) == K,      % For ascending vein (inflation)
+if length(P.tau_d_in) == K      % For ascending vein (inflation)
     tau_d_in  = P.tau_d_in;             % Depth-specific defined by user 
 else
     tau_d_in  = ones(K,1)*P.tau_d_in;   % Default  
-end;
-if length(P.tau_d_de) == K,       % For ascending vein (deflation)
+end
+if length(P.tau_d_de) == K       % For ascending vein (deflation)
     tau_d_de  = P.tau_d_de;             % Depth-specific defined by user 
 else
     tau_d_de  = ones(K,1).*P.tau_d_de;  % Default
@@ -209,17 +152,17 @@ rho_p  = P.rho_p;  % In blood (pial vein)
 rho_tp = P.rho_tp; % In in tissue and CSF 
 
 % Relaxation rates (in sec-1):
-if length(P.R2s_t) == K,  % For tissue
+if length(P.R2s_t) == K  % For tissue
     R2s_t  = P.R2s_t;           %
 else
     R2s_t  = ones(K,1).*P.R2s_t;   % (sec-1)
 end
-if length(P.R2s_v) == K,  % For venules
+if length(P.R2s_v) == K  % For venules
     R2s_v  = P.R2s_v;               % (sec-1)
 else
     R2s_v  = ones(K,1)*P.R2s_v; % (sec-1) 
 end
-if length(P.R2s_d) == K,  % For ascening vein
+if length(P.R2s_d) == K  % For ascening vein
     R2s_d  = P.R2s_d;           % (sec-1)
 else
     R2s_d  = ones(K,1)*P.R2s_d; % (sec-1)  
@@ -315,7 +258,7 @@ for t = 1:P.T/dt
     dHb_d(end)    = (f_v(end).*Xk(end,2)./Xk(end,1) - f_d(end).*Xk(end,4)./Xk(end,3))./t0d(end);
     
     % blood outflow from other comparments of ascending vein:
-    for i = K-1:-1:1,
+    for i = K-1:-1:1
         if alpha_d(i)>0
             f_d(i)     = (V0d(i).*Xk(i,3).^(1./alpha_d(i)) + tau_d(i).*(f_v(i).*F0v(i)+f_d(i+1).*F0d(i+1)))./(V0d(i)+F0d(i).*tau_d(i));
         else
@@ -325,7 +268,7 @@ for t = 1:P.T/dt
         dv_d(i)    = (f_v(i).*F0v(i)./F0d(i) + f_d(i+1).*F0d(i+1)./F0d(i) - f_d(i))./t0d(i);
         dHb_d(i)   = (f_v(i).*F0v(i)./F0d(i).*Xk(i,2)./Xk(i,1) + f_d(i+1).*F0d(i+1)./F0d(i).*Xk(i+1,4)./Xk(i+1,3) - f_d(i).*Xk(i,4)./Xk(i,3))./t0d(i);
 
-    end;
+    end
     
     % PIAL VEIN COMPARTMENT:
     %--------------------------------------------------------------------------    
@@ -335,7 +278,7 @@ for t = 1:P.T/dt
         f_p     = (V0p.*Xp(1).^(1./alpha_p) + F0p.*tau_p.*f_d(1))./(V0p+F0p.*tau_p);
     else
         f_p     = f_d(1);
-    end;
+    end
     % changes in blood volume and deoxyhemoglobin in pial vein:
     dv_p  = (f_d(1) - f_p)./t0p;
     dHb_p = (f_d(1).*Xk(1,4)./Xk(1,3) - f_p.*Xp(2)./Xp(1))./t0p;
@@ -398,7 +341,7 @@ for t = 1:P.T/dt
     LBRpial(t,:) = H0p.*((1-V0pq).*(k1p.*V0pq.*(1-q_p))      +k2p.*V0pq.*(1-q_p./v_p)+...
                                     k3p.*V0pq.*(1-v_p)).*100;
                          
-end;
+end
 
 % save baseline physiological parameters
 Y.F0v  = F0v;
