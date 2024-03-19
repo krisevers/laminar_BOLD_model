@@ -6,7 +6,7 @@ from neuronal_NVC import *
 
 from LBR import *
 
-K = 4  # number of depths
+K = 13  # number of depths
 
 # Laminar BOLD response to short 2 sec stimulus
 # ==========================================================================
@@ -40,6 +40,8 @@ P['alpha_d'] = 0.2  # Choose steady-state CBF-CBV coupling for ascending vein
 P['tau_d_de'] = 30  # Choose dynamic CBF-CBV uncoupling for ascending vein
 
 LBR, LBRpial, Y = LBR_model(P, cbf)  # Generate the laminar bold response
+
+import IPython; IPython.embed()
 
 time_axis = np.arange(0, P['T'], P['dt']) - onset * P['dt']  # time axis in seconds
 
